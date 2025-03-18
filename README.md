@@ -2,8 +2,9 @@
 
 This repository accompanies the paper
 
-> Ruiz, F. J. R. et al. Quantum Circuit Optimization with AlphaTensor.
-*Nature Machine Intelligence* (2024).
+> Ruiz, F. J. R. et al.
+[Quantum Circuit Optimization with AlphaTensor](https://www.nature.com/articles/s42256-025-01001-1).
+*Nature Machine Intelligence* (2025).
 
 There are two directories:
 
@@ -38,7 +39,6 @@ tested with Python 3.11.9 on an Nvidia Quadro P1000 GPU).
 - `/decompositions`: No installation required. The provided notebook can be
 opened and run in Google Colab.
 
-
 ## Usage
 
 - `/src`: This folder does not contain runnable code.
@@ -52,20 +52,20 @@ the command line, from the parent directory that contains the
 When running the notebook, you will be asked to upload certain files containing
 the decompositions; please select the appropriate `.npz` file from the folder.
 
-
 ## Citing this work
 
 If you use the code or data in this package, please cite:
 
-```latex
+```
 @article{alphatensor_quantum,
       author={Ruiz, Francisco J. R. and Laakkonen, Tuomas and Bausch, Johannes and Balog, Matej and Barekatain, Mohammadamin and Heras, Francisco J. H. and Novikov, Alexander and Fitzpatrick, Nathan and Romera-Paredes, Bernardino and van de Wetering, John and Fawzi, Alhussein and Meichanetzidis, Konstantinos and Kohli, Pushmeet},
       title={Quantum Circuit Optimization with {A}lpha{T}ensor},
-      journal = {Nature Machine Intelligence (Under Review)},
-      year={2024},
+      journal = {Nature Machine Intelligence},
+      year={2025},
+      doi={10.1038/s42256-025-01001-1},
+      url={https://www.nature.com/articles/s42256-025-01001-1},
 }
 ```
-
 
 ## License and disclaimer
 
