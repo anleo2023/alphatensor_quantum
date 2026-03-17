@@ -23,6 +23,11 @@ import jaxtyping as jt
 import numpy as np
 
 
+_CUSTOM_TENSORS = None
+
+MAX_TENSOR_SIZE = 70  # the maximum allowed size for custom tensors, to prevent memory issues
+
+
 _SMALL_TCOUNT_3 = np.array(
     [
         [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
@@ -228,6 +233,41 @@ _NC_TOFF_3 = np.array(
     dtype=np.int32,
 )
 
+###################### To load custom tensors from .npy files ######################
+def load_custom_tensors(path: str, max_size: int = MAX_TENSOR_SIZE) -> None:
+    """loads a .npy file and sets it as the custom tensors 
+    
+    Args: 
+        path: Path to the .npy file containing tensor 
+        max_size : Maximum allowed size for the tensors
+    Raises:
+        ValueError : if the tensor is too large or not 3D
+        
+    """
+    loaded = np.load(path)
+    if loaded.ndim == 2:
+        raise ValueError(
+            f'Expected a 3D tensor, got a 2D array of shape {loaded.shape}.'
+        )
+    if loaded.ndim != 3:
+        raise ValueError(
+            f'Expected a 3D tensor, got shape {loaded.shape}.'
+        )
+    if not (loaded.shape[0] == loaded.shape[1] == loaded.shape[2]):
+        raise ValueError(
+            f'Tensor must be cubic (n x n x n), got shape {loaded.shape}.'
+        )
+    if loaded.shape[0] > max_size:
+        raise ValueError(
+            f'Tensor size {loaded.shape[0]} exceeds the maximum allowed size'
+            f' of {max_size}.'
+        )
+    global _CUSTOM_TENSORS
+    _CUSTOM_TENSORS = loaded.astype(np.int32)
+#####################################################################################
+
+
+
 
 class CircuitType(enum.Enum):
   """Types of circuits."""
@@ -237,6 +277,9 @@ class CircuitType(enum.Enum):
   NC_TOFF_3 = 3
   # A small 3-qubit circuit with optimal T-count of 3, useful for testing.
   SMALL_TCOUNT_3 = 4
+  CUSTOM = 5  # custom tensors loaded  
+
+  
 
 
 _TENSORS_DICT = immutabledict.immutabledict({
@@ -267,6 +310,8 @@ def zero_pad_tensor(
   return jnp.pad(tensor, (0, padding_width))
 
 
+
+################### I changed this function to deal with custom tensors####################
 def get_signature_tensor(
     circuit_type: CircuitType
 ) -> jt.Integer[jt.Array, 'size size size']:
@@ -278,6 +323,12 @@ def get_signature_tensor(
   Returns:
     The (symmetric) target signature tensor, with entries in {0, 1}.
   """
+  if circuit_type == CircuitType.CUSTOM:
+      if _CUSTOM_TENSORS is None:
+          raise ValueError('Call load_custom_tensor(path) first.')
+      return jnp.array(_CUSTOM_TENSORS)
+
   if circuit_type not in _TENSORS_DICT:
     raise ValueError(f'Unsupported circuit type: {circuit_type}')
   return jnp.array(_TENSORS_DICT[circuit_type])
+######################################################################################
