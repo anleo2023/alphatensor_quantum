@@ -45,10 +45,23 @@ class GameStats(NamedTuple):
       for convenience, as it makes it possible to filter out elements in the
       batch for which `num_games == 0` when computing the effective average
       return.
+    best_factors: The past_factors array from the episode that achieved the
+        best return. Shape: (num_target_tensors, max_num_moves, size).
+    best_num_moves: The number of moves taken in the best episode for each
+      target, so we can trim the padding from best_factors when saving.
+      
   """
   num_games: jt.Integer[jt.Array, 'batch_size num_target_tensors']
   best_return: jt.Float[jt.Array, 'num_target_tensors']
   avg_return: jt.Float[jt.Array, 'batch_size num_target_tensors']
+  
+  ############added fields for best_factors and best_num_moves ##############
+  best_factors: jt.Integer[jt.Array, 'num_target_tensors max_num_moves tensor_size']
+  best_num_moves: jt.Integer[jt.Array, 'num_target_tensors']
+  #############################################################################
+  
+  
+  
 
 
 class RunState(NamedTuple):
@@ -374,10 +387,33 @@ class Agent:
             negative_inf
         ), axis=0)
     )
+    # added code ,   this function finds among all episodes (the batch) that have terminated and achieved the best return (fewer T gate) 
+    step_best_batch_idx = jnp.argmax(jnp.where(                              
+        _broadcast_shapes(is_terminal, new_best_return_if_terminal),
+        new_best_return_if_terminal,
+        negative_inf
+    ), axis=0)
+    
+    # added code , compare the best the return found this step against the best return found across all previous steps (stored in run_state.game_stats.best_return) 
+    improved = new_best_return > run_state.game_stats.best_return
+    
+    # added code , if the best return has improved, update the best_factors and best_num_moves with the ones from the best batch element found this step 
+    def update_for_target(t):
+      return (
+          jnp.where(improved[t], new_env_states.past_factors[step_best_batch_idx[t]], run_state.game_stats.best_factors[t]),
+          jnp.where(improved[t], new_env_states.num_moves[step_best_batch_idx[t]], run_state.game_stats.best_num_moves[t]),
+      )
+    new_best_factors, new_best_num_moves = jax.vmap(update_for_target)(
+        jnp.arange(num_target_tensors)
+    )
+    # added code end ##############################################################################
+    
     return GameStats(
         num_games=new_num_games,
         avg_return=new_avg_return,
         best_return=new_best_return,
+        best_factors=new_best_factors, # added 
+        best_num_moves=new_best_num_moves, # added 
     )
 
   def _update_demonstrations_and_states(
